@@ -13,23 +13,44 @@ defmodule FixerEx do
   Foreign exchange rates and currency conversion.
   """
 
+  use Application
   require Logger
 
   @api_endpoint "https://api.fixer.io"
 
 
+  ##== Application callbacks ==============================================
+  def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
+    children = [worker(FixerEx.Cache, [])]
+
+    opts = [strategy: :one_for_one, name: BitEx.Supervisor]
+    Supervisor.start_link(children, opts)
+  end
+
+  
   ##== API ================================================================
-  def rates(symbols, base \\ "EUR", date \\ "latest")
-  def rates(symbols, base, date) when is_list(symbols) do
+  def rates(symbols \\ [], base \\ "EUR", date \\ "latest", use_cache \\ true)
+  def rates(symbols, base, "latest", true) do
+    FixerEx.Cache.rates(base, symbols)
+  end
+  def rates(symbols, base, date, _use_cache) when is_list(symbols) do
     _rates(base, Enum.join(symbols, ","), date)
   end
-  def rates(symbol , base, date) do
+  def rates(symbol , base, date, _use_cache) do
     _rates(base, symbol, date)
   end
 
+  defp _rates(base, "", date) do
+    url = url([date], %{base: base})
+    %{"rates" => rates} = get(url)
+    rates
+  end
   defp _rates(base, symbols, date) do
     url = url([date], %{base: base, symbols: symbols})
-    get(url)
+    %{"rates" => rates} = get(url)
+    rates
   end
 
   
