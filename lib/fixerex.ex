@@ -25,7 +25,7 @@ defmodule FixerEx do
 
     children = [worker(FixerEx.Cache, [])]
 
-    opts = [strategy: :one_for_one, name: BitEx.Supervisor]
+    opts = [strategy: :one_for_one, name: FixerEx.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
